@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自主性カードアプリ（スワイプ対応）</title>
+  <style>
+    body {
+      font-family: "Helvetica Neue", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: #f8f9fb;
+      overflow: hidden;
+    }
+
+    #card {
+      width: 90%;
+      max-width: 380px;
+      height: 520px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: transform 0.4s ease, opacity 0.4s ease;
+      position: absolute;
+      user-select: none;
+      padding: 20px;
+    }
+
+    #text {
+      white-space: pre-line;
+      font-size: 20px;
+      line-height: 1.6;
+    }
+
+    .indicator {
+      position: absolute;
+      top: 30px;
+      font-size: 18px;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .yes-indicator { left: 30px; color: #3b82f6; }
+    .no-indicator { right: 30px; color: #f87171; }
+
+  </style>
+</head>
+<body>
+
+  <div id="card">
+    <div class="indicator yes-indicator">YES</div>
+    <div class="indicator no-indicator">NO</div>
+    <h2 id="text">あなたの1日を、1枚から始めよう。</h2>
+  </div>
+
+  <script>
+    const cards = [
+      {
+        text: "これからX（不毛な争いアプリ）を見る？",
+        yes: () => window.open("https://twitter.com", "_blank"),
+        no: "筋トレをする？"
+      },
+      {
+        text: "筋トレをする？",
+        yes: "OK！ダンベルを持とう！",
+        no: "OK！歩いて思考の整理から始めよう！"
+      },
+      {
+        text: "今日の選択を見てみよう",
+        yes: "YES: 60%　NO: 40%　→ あなたは行動的！",
+        no: "結果よりも、選んだことが大事。"
+      },
+      {
+        text: "あなたの今日の選択はすべて正しい。\n自分で決めるたび、あなたは少し自由になる。",
+        yes: "また明日も選ぼう 🌙",
+        no: "また明日も選ぼう 🌙"
+      }
+    ];
+
+    let index = 0;
+    const card = document.getElementById("card");
+    const textEl = document.getElementById("text");
+    const yesIndicator = document.querySelector(".yes-indicator");
+    const noIndicator = document.querySelector(".no-indicator");
+
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+
+    card.addEventListener("touchstart", (e) => {
+      startX = e.touches[0].clientX;
+      isDragging = true;
+    });
+
+    card.addEventListener("touchmove", (e) => {
+      if (!isDragging) return;
+      currentX = e.touches[0].clientX - startX;
+      card.style.transform = `translateX(${currentX}px) rotate(${currentX / 20}deg)`;
+
+      // インジケーター表示
+      if (currentX > 0) {
+        yesIndicator.style.opacity = Math.min(currentX / 100, 1);
+        noIndicator.style.opacity = 0;
+      } else {
+        noIndicator.style.opacity = Math.min(-currentX / 100, 1);
+        yesIndicator.style.opacity = 0;
+      }
+    });
+
+    card.addEventListener("touchend", () => {
+      isDragging = false;
+      yesIndicator.style.opacity = 0;
+      noIndicator.style.opacity = 0;
+
+      if (Math.abs(currentX) > 100) {
+        const isYes = currentX > 0;
+        handleChoice(isYes);
+        card.style.opacity = 0;
+        card.style.transform = `translateX(${isYes ? 200 : -200}px) rotate(${isYes ? 20 : -20}deg)`;
+        setTimeout(() => {
+          card.style.transition = "none";
+          card.style.transform = "translateX(0) rotate(0)";
+          card.style.opacity = 1;
+          card.offsetHeight; // reflow
+          card.style.transition = "transform 0.4s ease, opacity 0.4s ease";
+        }, 300);
+      } else {
+        card.style.transform = "translateX(0)";
+      }
+      currentX = 0;
+    });
+
+    function handleChoice(isYes) {
+      if (index < cards.length) {
+        const c = cards[index];
+        if (typeof c.yes === "function" && isYes) c.yes();
+        textEl.innerText = isYes ? (c.yesText || c.yes || c.text) : (c.no || c.text);
+        index++;
+      } else {
+        textEl.innerText = "完了 🎉";
+      }
+    }
+  </script>
+
+</body>
+</html>
